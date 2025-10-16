@@ -149,7 +149,7 @@ Notice that the `<complex_id>` specifies the identifier of the target complex, a
 
 This command will create two output directories in the same location as `stoi.json`: `mono_fastas/` for storing FASTA files for individual monomer chains, and `subcomp_fastas/` for storing FASTA files for multi-chain subcomponents. All generated FASTA files can be used as input for AF2/AFM structure prediction.
 
-You can use [ColabFold](https://github.com/sokrypton/ColabFold) to run AF2/AFM using a Google Colab Notebook. You can also download the code from [AlphaFold](https://github.com/jcheongs/alphafold-multimer) and run predictions locally (which requires a GPU).
+You can use [ColabFold](https://github.com/sokrypton/ColabFold) to run AF2/AFM using a Google Colab Notebook, or download the code from [AlphaFold](https://github.com/jcheongs/alphafold-multimer) and run predictions locally (which requires a GPU).
 
 Disordered terminal regions of predicted monomers may interfere with the docking process. We recommend using the following script to preprocess the monomers (requires `STRIDE`):
 ```
@@ -183,4 +183,5 @@ The command will output a file `build_types.txt` recording all selected modeling
 -`assemble/`: assembly.
 
 ## Stage 4 - Modeling, scoring and ranking models
+
 In this stage, we will perform all the modeling strategies selected in the previous stage. 
