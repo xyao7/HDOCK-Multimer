@@ -24,7 +24,7 @@ For AF2-based prediction of monomers and subcomponents, an NVIDIA GPU with >= 40
 ### Software requirements
 `HDM` is supported for *Linux*, the code has been tested on CentOS 6.
 
-In order to run the `HDM` program, several third-party packages/programs are required as follows.
+In order to run this program, several third-party packages/programs are required as follows.
 
 #### Python package requirements
 The supporting scripts depend on these Python3 packages, which can be installed using pip:
@@ -185,4 +185,5 @@ The command will output a file `build_types.txt` recording all selected modeling
 ## Stage 4 - Modeling, scoring and ranking models
 
 In this stage, we will perform all the modeling strategies selected in the previous stage. 
+
 
