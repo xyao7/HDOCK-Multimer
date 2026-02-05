@@ -6,21 +6,21 @@ if ! ldconfig -p | grep -q "libfftw3.so.3"; then
 fi
 
 # Install HDOCKlite
-wget -q http://huanglab.phys.hust.edu.cn/software/hdocklite/download/4229836268ffb02be6c36/HDOCKlite.tar.gz
-tar -xzf HDOCKlite.tar.gz
-cp HDOCKlite-v1.1/createpl tools/
-cp HDOCKlite-v1.1/hdock tools/
-rm -rf HDOCKlite.tar.gz HDOCKlite-v1.1/
+wget -q https://github.com/huang-laboratory/HDOCKlite/archive/refs/heads/main.zip -O HDOCKlite-main.zip
+unzip -q HDOCKlite-main.zip
+cp HDOCKlite-main/createpl tools/
+cp HDOCKlite-main/hdock tools/
+rm -rf HDOCKlite-main.zip HDOCKlite-main/
 
-# Install HSYMDOCKlite
-wget -q http://huanglab.phys.hust.edu.cn/software/hsymdock/download/63211752368ffb0335e21e/HSYMDOCKlite.tar.gz
-tar -xzf HSYMDOCKlite.tar.gz
-cp HSYMDOCK_v1.1/chdock tools/
-cp HSYMDOCK_v1.1/compcn tools/
-cp HSYMDOCK_v1.1/dhdock tools/
-cp HSYMDOCK_v1.1/dhdock.sh tools/
-cp HSYMDOCK_v1.1/compdn tools/
-rm -rf HSYMDOCKlite.tar.gz HSYMDOCK_v1.1/
+# Install HSYMDOCK
+wget -q https://github.com/huang-laboratory/HSYMDOCK/archive/refs/heads/main.zip -O HSYMDOCK-main.zip
+unzip -q HSYMDOCK-main.zip
+cp HSYMDOCK-main/chdock tools/
+cp HSYMDOCK-main/compcn tools/
+cp HSYMDOCK-main/dhdock tools/
+cp HSYMDOCK-main/dhdock.sh tools/
+cp HSYMDOCK-main/compdn tools/
+rm -rf HSYMDOCK-main.zip HSYMDOCK-main/
 
 # Install jq
 wget -q https://github.com/jqlang/jq/releases/download/jq-1.8.1/jq-linux64
