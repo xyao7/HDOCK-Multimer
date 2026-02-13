@@ -37,6 +37,7 @@ source_structs = None
 transformations = None
 filtered_res_indices = None
 homo_chains_list = None
+total_length = None
 subunits_range = None
 subunits_order = None
 subunits_id_mapping = None
@@ -105,7 +106,7 @@ def extract_median_bfactor(chain: Chain):
 def load_struct_data(pdbdir, file_stoi, num_cpus, fout):
     global chain_ids, chain_num, mbfactors, mono_structs, source_structs
     global transformations, filtered_res_indices, homo_chains_list
-    global full_chain_ids, full_chain_num
+    global full_chain_ids, full_chain_num, total_length
     global subunits_range, subunits_order, subunits_id_mapping
 
     unique_chains = pd.unique(interfaces[["chain1", "chain2"]].values.ravel("K"))
@@ -115,6 +116,7 @@ def load_struct_data(pdbdir, file_stoi, num_cpus, fout):
     mono_structs = {}
     filtered_res_indices = {}
     homo_chains_list = []
+    total_length = 0
 
     for chain_id in chain_ids:
         chain_struct = pdb_parser.get_structure("", f"{current_dir}/{chain_id}.pdb")[0][chain_id]
@@ -132,7 +134,8 @@ def load_struct_data(pdbdir, file_stoi, num_cpus, fout):
         stoi_data = json.load(fstoi)
     unique_chain_ids = []
     for i in stoi_data:
-        asym_ids = i["asym_ids"]
+        asym_ids, length = i["asym_ids"], i["length"]
+        total_length += len(asym_ids) * length
         unique_chain_ids.extend(asym_ids)
         if len(asym_ids) > 1:
             homo_chains_list.append(asym_ids)

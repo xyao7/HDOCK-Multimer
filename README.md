@@ -193,13 +193,13 @@ bash HDM_pipeline.sh -stoi <stoi.json> -mono_dir <mono_dir> -sub_dir <subcompone
 
 ## Extensions
 ### Assembly with crosslink restraints
-HDM supports an optional assembly strategy that integrates **crosslinking distance restraints** between subunits. To use the extension, please confirm that tou have prepared the following outputs:
+HDM supports an optional assembly strategy that integrates **crosslinking distance restraints** between subunits. To use the extension, please confirm that tou have prepared the following inputs:
 
 -`stoi.json`: file recording stoichiometry and subunit definitions (same format as described above).
 
 -`subcomponent_dir`: folder containing the predicted subcomponent structures.
 
--`crosslinks.txt`: file recording crosslink restraints between subunits. Each line in `crosslinks.txt` refines one crosslink restraint in the following format:
+-`crosslinks.txt`: file recording crosslink restraints between subunits. Each line in `crosslinks.txt` defines one crosslink restraint in the following format:
 ```
 <res_i>  <chain_i>  <res_j>  <chain_j>  <min_distance>  <max_distance>  <w1>
 ```
@@ -220,7 +220,26 @@ We have also provided a demo for demonstrating the inputs and execution process 
 
 This demo Colab Notebook runs the HDM assembly strategy with crosslink restraints on the `crosslinks/examples/6F0K/` folder in this repository. The output models will be saved in the newly created folder `crosslinks/examples/6F0K/results/`.
 
+
 ### Predict stoichiometry
+HDM supports predicting the stoichiometry (copy number) within a user-defined range by running the assembly pipeline for a set of candidate stoichiometries and selecting the best result. To use the extension, please confirm that you have prepared the following inputs:
+
+-`candidate_stoi.txt`: file recording candidate stoichiometries and their corresponding input paths. Each line in `candidate_stoi.txt` defines one candidate in the following format: 
+```
+complex_id subunit_id copy_number file_stoi subcomponent_dir
+```
+where `file_stoi` is the stoichiometry JSON file for the candidate. `subcomponent_dir` is the directory containing the predicted subcomponent structures for the candidate. Both `file_stoi` and `subcomponent_dir` should be prepared for the extension. An example is as follows:
+```
+example A 8 stoi_8.json subcomponents_8
+example A 9 stoi_9.json subcomponents_9
+example A 10 stoi_10.json subcomponents_10
+```
+
+With the inputs ready, you can run the stoichiometry prediction script `HDM_predict_stoi.sh`:
+```
+bash HDM_predict_stoi.sh -stois <candidate_stoi.txt>
+```
+
 
 ## References
 **HDOCKlite**

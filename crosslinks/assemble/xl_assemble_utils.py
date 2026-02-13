@@ -90,7 +90,9 @@ def calculate_itscore_md_amber(orientation, i, md_steps):
 
 # create DataFrame for an assembly path, following the same format as interfaces
 def create_path_df(ifs, path):
-    return pd.concat([ifs.iloc[0:0], pd.DataFrame(path)], ignore_index=True)
+    # return pd.concat([ifs.iloc[0:0], pd.DataFrame(path)], ignore_index=True)
+    df = pd.DataFrame(path, columns=ifs.columns)
+    return df.astype(ifs.dtypes.to_dict()).reset_index(drop=True)
 
 # sort transformations in the specified order
 def sort_dataframe(df, score1, score2, chain1, chain2):
