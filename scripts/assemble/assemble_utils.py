@@ -16,8 +16,10 @@ import shutil
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 BASE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
 TOOL_PATH = os.path.abspath(os.path.join(BASE_PATH, "..", "tools"))
+AMBER_PATH = os.path.abspath(os.path.join(TOOL_PATH, "amber"))
 openmm_script = os.path.join(TOOL_PATH, "refine_model_openmm.py")
 scorecom = os.path.join(TOOL_PATH, "scorecom.sh")
+amber1 = os.path.join(AMBER_PATH, "3amberRefine1.sh")
 sys.path.append(BASE_PATH)
 from parse_pdb import Chain, write_pdb_file
 
@@ -62,13 +64,25 @@ def calculate_itscore(orientation, i):
         return i, it_score, model_file
 
 # refine structure using OpenMM energy minimization, then calculate IT-score
-def calculate_itscore_md(orientation, i, md_steps):
+def calculate_itscore_md_openmm(orientation, i, md_steps):
     with managed_tempfile(".pdb") as model_file, \
             managed_tempfile(".pdb", delete_ok=False) as md_file:
         write_pdb_file(orientation, model_file, config.format_lines)
         subprocess.run(f"python {openmm_script} {model_file} {md_steps} {md_file}",
                        shell=True, check=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         result = subprocess.run(f"bash {scorecom} {md_file}", shell=True, check=True,
+                                stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+        it_score = float(result.stdout.strip())
+        return i, it_score, md_file
+    
+# refine structure using Amber energy minimization, then calculate IT-score
+def calculate_itscore_md_amber(orientation, i, md_steps):
+    with managed_tempfile(".pdb") as model_file, \
+            managed_tempfile(".pdb", delete_ok=False) as md_file:
+        write_pdb_file(orientation, model_file, config.format_lines)
+        subprocess.run(f"bash {amber1} {model_file} {md_steps} {md_file}",
+                       shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(f"bash {scorecom} {md_file}", shell=True, check=True, 
                                 stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
         it_score = float(result.stdout.strip())
         return i, it_score, md_file
@@ -294,7 +308,7 @@ def cluster_results(initial_results, population_size, rmsd_threshold, rank_type)
     return clstr_results
 
 # calculate IT-score of the structure and save it in the same dictionary
-def add_results_itscore(results, num_cpus, md_steps, fout):
+def add_results_itscore(results, num_cpus, md_steps, md_engine, fout):
     stime = time.time()
     results_to_itscore = [
         {"idx": i, "result": result} for i, result in enumerate(results) if "it_score" not in result
@@ -304,11 +318,20 @@ def add_results_itscore(results, num_cpus, md_steps, fout):
 
     with ProcessPoolExecutor(max_workers=num_cpus) as executor:
         if md_steps > 0:
-            futures = [
-                executor.submit(
-                    calculate_itscore_md, item["result"]["full_orientation"], item["idx"], md_steps
-                ) for item in results_to_itscore
-            ]
+            if md_engine == "openmm":
+                futures = [
+                    executor.submit(
+                        calculate_itscore_md_openmm, 
+                        item["result"]["full_orientation"], item["idx"], md_steps
+                    ) for item in results_to_itscore
+                ]
+            else:
+                futures = [
+                    executor.submit(
+                        calculate_itscore_md_amber, 
+                        item["result"]["full_orientation"], item["idx"], md_steps
+                    ) for item in results_to_itscore
+                ]
         else:
             futures = [
                 executor.submit(
@@ -330,17 +353,21 @@ def add_results_itscore(results, num_cpus, md_steps, fout):
     return results
 
 # refine the final output model, not used
-def refine_output_model(i, result, model_file, md_steps):
+def refine_output_model(i, result, model_file, md_steps, md_engine):
     if md_steps > 0:
         file1 = f"{current_dir}/0-assemble_{i + 1}.pdb"
         write_pdb_file(result["full_orientation"], file1, config.format_lines)
-        subprocess.run(f"python {openmm_script} {file1} {md_steps} {model_file}",
-                       shell=True, check=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        if md_engine == "openmm":
+            subprocess.run(f"python {openmm_script} {file1} {md_steps} {model_file}",
+                           shell=True, check=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        else:
+            subprocess.run(f"bash {amber1} {file1} {md_steps} {model_file}", 
+                           shell=True, check=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         os.remove(file1)
     else:
         write_pdb_file(result["full_orientation"], model_file, config.format_lines)
 
-# print the final output model
+# print the final output model, ranked by IT-score
 def print_results_itscore(results, output, model_num, iteration, fout):
     results.sort(key=lambda x: x["it_score"])
     stem, suffix = output.rsplit(".", 1)
@@ -352,6 +379,42 @@ def print_results_itscore(results, output, model_num, iteration, fout):
         print(f"Iteration {iteration} model {i + 1} it_score: {it_score}", file=fout)
         modle_file = f"{current_dir}/{stem}{iteration}_{i + 1}.{suffix}"
         shutil.copy(result["file"], modle_file)
+
+# print the final output model, ranked by confidence
+def print_results_confidence(results, output, model_num, iteration, fout):
+    results.sort(key=lambda x: x["if_score"], reverse=True)
+    stem, suffix = output.rsplit(".", 1)
+    num_models = len(results)
+    num_models = min(num_models, model_num)
+    selected_results = results[:num_models]
+    for i, result in enumerate(selected_results):
+        confidence = result["if_score"]
+        print(f"Iteration {iteration} model {i + 1} confidence_score: {confidence}", 
+              file=fout)
+        model_file = f"{current_dir}/{stem}{iteration}_{i + 1}.{suffix}"
+        write_pdb_file(result["full_orientation"], model_file, config.format_lines)
+
+# print the final output model after MD relaxation, ranked by confidence
+def print_results_confidence_md(results, output, model_num, iteration, md_steps, md_engine, fout):
+    results.sort(key=lambda x: x["if_score"], reverse=True)
+    stem, suffix = output.rsplit(".", 1)
+    num_models = len(results)
+    num_models = min(num_models, model_num)
+    selected_results = results[:num_models]
+    for i, result in enumerate(selected_results):
+        confidence = results["if_score"]
+        print(f"Iteration {iteration} model {i + 1} confidence_score: {confidence}", 
+              file=fout)
+        model_file = f"{current_dir}/{stem}{iteration}_{i + 1}.{suffix}"
+        file1 = f"{current_dir}/0-{stem}{iteration}_{i + 1}.{suffix}"
+        write_pdb_file(result["full_orientation"], file1, config.format_lines)
+        if md_engine == "openmm":
+            subprocess.run(f"python {openmm_script} {file1} {md_steps} {model_file}",
+                           shell=True, check=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        else:
+            subprocess.run(f"bash {amber1} {file1} {md_steps} {model_file}", 
+                           shell=True, check=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        os.remove(file1)
 
 # select a set of optimal subcomplexes when assembly fails
 def select_optimal_subcomplex(initial_results):

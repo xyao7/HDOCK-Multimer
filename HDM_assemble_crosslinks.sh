@@ -77,4 +77,46 @@ ASSEMBLY_PATH="$WORK_DIR/assemble_crosslinking"
 mkdir "$ASSEMBLY_PATH"
 
 cd "$ASSEMBLY_PATH"
-python ${BASE_DIR}/assemble
+python ${BASE_DIR}/crosslinks/assemble/dataprocess.py \
+    --pdbdir $SUBCOMPONENT_DIR \
+    --stoi $FILE_STOI
+python ${BASE_DIR}/crosslinks/assemble/xl_assemble.py \
+    --pdbdir $SUBCOMPONENT_DIR \
+    --output assemble.pdb \
+    --nmax $NMAX \
+    --nround 500 \
+    --rmsd 5.0 \
+    --population 100 \
+    --workers $NUM_CPUS \
+    --generations 50 \
+    --md $NUM_STEPS \
+    --stoi $FILE_STOI \
+    --xlinks $FILE_CROSSLINK \
+    --xl_threshold1 0.7 \
+    --xl_threshold2 0.8
+
+RESULTS_PATH="$WORK_DIR/results/"
+mkdir "$RESULTS_PATH"
+
+RESULTS_FILE="$RESULTS_PATH/results.log"
+while IFS= read -r line; do
+    [[ "$line" == Iteration* ]] || continue
+
+    if [[ "$line" =~ ^Iteration[[:space:]]+([0-9]+)[[:space:]]+model[[:space:]]+([0-9]+)[[:space:]]+XL-satisfaction:[[:space:]]*([^,[:space:]]+),[[:space:]]+XL-scaled[[:space:]]+it_score:[[:space:]]*([^[:space:]]+)[[:space:]]*$ ]]; then
+        iteration="${BASH_REMATCH[1]}"
+        model_id="${BASH_REMATCH[2]}"
+        xl_satisfaction="${BASH_REMATCH[3]}"
+        scaled_it_score="${BASH_REMATCH[4]}"
+        xl_fmt=$(awk -v x="$xl_satisfaction" 'BEGIN{printf "%.4f", x+0}')
+        it_fmt=$(awk -v x="$scaled_it_score"   'BEGIN{printf "%.4f", x+0}')
+        echo "Model ${model_id} Crosslink_Satisfaction: ${xl_fmt} Scaled_IT-score: ${it_fmt}" >> "$RESULTS_FILE"
+        cp "$ASSEMBLY_PATH/assemble${iteration}_${model_id}.pdb" "$RESULTS_PATH/model_${model_id}.pdb"
+    else
+        echo "[WARN] Unparsed line: $line" >&2
+    fi
+done < "$ASSEMBLY_PATH/aa2.log"
+
+END_TIME=$(date +%s)
+RUN_TIME=$(($END_TIME - $START_TIME))
+
+echo -e "\n[INFO] HDM program finish, total cost $RUN_TIME s"

@@ -22,6 +22,8 @@ def main(fout):
     arg_parser.add_argument("-w", "--workers", type=int, default=20)
     arg_parser.add_argument("-g", "--generations", type=int, default=50)
     arg_parser.add_argument("-m", "--md", type=int, default=500)
+    arg_parser.add_argument("-e", "--md_engine", type=str, 
+                            choices=["openmm", "amber"], default="openmm")
     arg_parser.add_argument("-s1", "--score1", type=float, default=85.0)
     arg_parser.add_argument("-s2", "--score2", type=float, default=80.0)
 
@@ -37,6 +39,7 @@ def main(fout):
     num_cpus = config.get_num_cpus(max_workers)
     generations = args.generations
     md_steps = args.md
+    md_engine = args.md_engine
     if_score_threshold1 = args.score1
     if_score_threshold2 = args.score2
 
@@ -51,6 +54,7 @@ def main(fout):
     GeneticAlgorithm.model_num = model_num
     GeneticAlgorithm.output = file_output
     GeneticAlgorithm.md_steps = md_steps
+    GeneticAlgorithm.md_engine = md_engine
     GeneticAlgorithm.if_score_threshold1 = if_score_threshold1
     GeneticAlgorithm.if_score_threshold2 = if_score_threshold2
 
@@ -73,7 +77,7 @@ def main(fout):
             q_level = 2
         if q_level == 0 or early_stop:
             initial_results = utils.add_results_itscore(
-                initial_results, num_cpus, md_steps, fout
+                initial_results, num_cpus, md_steps, md_engine, fout
             )
             utils.print_results_itscore(
                 initial_results, file_output, model_num, 0, fout
@@ -93,8 +97,8 @@ def main(fout):
               file=fout, flush=True)
         print(f"\nAssembly failed, print optimal subcomplexes for multi-body docking",
               flush=True)
-        selected_result = utils.select_optimal_subcomplex(initial_results)
-        utils.print_groups(selected_result, connectivity, fout)
+        optimal_result = utils.select_optimal_subcomplex(initial_results)
+        utils.print_groups(optimal_result, connectivity, fout)
 
     else:
         print("\n[WARN] Assembly failed, subunits connectivity is not satisfied",
@@ -103,8 +107,8 @@ def main(fout):
               file=fout, flush=True)
         print("\n[WARN] Assembly failed, subunits connectivity is not satisfied",
               flush=True)
-        selected_result = utils.select_optimal_subcomplex(initial_results)
-        utils.print_groups(selected_result, connectivity, fout)
+        optimal_result = utils.select_optimal_subcomplex(initial_results)
+        utils.print_groups(optimal_result, connectivity, fout)
 
     if os.path.isdir(config.temp_dir):
         shutil.rmtree(config.temp_dir)

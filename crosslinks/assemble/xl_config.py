@@ -14,12 +14,13 @@ from collections import defaultdict
 from itertools import combinations
 import sys
 
-SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
-BASE_PATH = os.path.abspath(os.path.join(SCRIPT_PATH, ".."))
+CONFIG_PATH = os.path.dirname(os.path.abspath(__file__))
+BASE_PATH = os.path.abspath(os.path.join(CONFIG_PATH, ".."))
 TOOL_PATH = os.path.abspath(os.path.join(BASE_PATH, "..", "tools"))
+SCRIPTS_PATH = os.path.abspath(os.path.join(BASE_PATH, "..", "scripts"))
 MMalign = os.path.join(TOOL_PATH, "MMalign")
 
-sys.path.append(BASE_PATH)
+sys.path.append(SCRIPTS_PATH)
 from parse_pdb import PDBParser, load_format_line, write_pdb_file, Chain
 
 
@@ -52,7 +53,7 @@ xl_total_data = None
 current_dir = os.getcwd()
 temp_dir = os.path.join(current_dir, "temp")
 os.makedirs(temp_dir, exist_ok=True)
-format_lines = load_format_line(os.path.join(BASE_PATH, "format.pdb"))
+format_lines = load_format_line(os.path.join(SCRIPTS_PATH, "format.pdb"))
 interfaces = pd.read_csv(f"{current_dir}/interfaces.csv")
 
 

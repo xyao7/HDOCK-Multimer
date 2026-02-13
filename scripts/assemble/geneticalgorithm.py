@@ -18,6 +18,7 @@ class GeneticAlgorithm:
     model_num = None
     output = None
     md_steps = None
+    md_engine = None
     if_score_threshold1 = None
     if_score_threshold2 = None
 
@@ -138,7 +139,7 @@ class GeneticAlgorithm:
                 print("No new individuals for 3 consecutive generations, stop iteration",
                       file=self.fout, flush=True)
                 break
-        utils.add_results_itscore(self.population, self.num_cpus, self.md_steps, self.fout)
+        utils.add_results_itscore(self.population, self.num_cpus, self.md_steps, self.md_engine, self.fout)
         utils.print_results_itscore(
             self.population, self.output, self.model_num, generation, self.fout
         )
