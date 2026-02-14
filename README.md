@@ -211,14 +211,11 @@ where `w1` represents the experimental confidence of the crosslink restraint, su
 123 B 75 E 0 30 0.95
 358 B 112 D 0 30 0.87
 ```
+
 With the inputs ready, you can run HDM by the script `HDM_assemble_crosslinks.sh`:
 ```
 bash HDM_assemble_crosslinks.sh -stoi <stoi.json> -crosslink <crosslinks.txt> -sub_dir <subcomponent_dir>
 ```
-
-We have also provided a demo for demonstrating the inputs and execution process of the algorithm, use the [Demo Google Colab Notebook Crosslink](https://colab.research.google.com/github/xyao7/HDOCK-Multimer/blob/main/HDM_assemble_crosslink.ipynb). 
-
-This demo Colab Notebook runs the HDM assembly strategy with crosslink restraints on the `crosslinks/examples/6F0K/` folder in this repository. The output models will be saved in the newly created folder `crosslinks/examples/6F0K/results/`.
 
 
 ### Predict stoichiometry
